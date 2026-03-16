@@ -1156,12 +1156,17 @@ def inject_css():
             background: var(--bg-chip) !important;
             border-radius: 6px 6px 0 0 !important;
         }
-        div[data-testid="stExpander"] summary span,
-        div[data-testid="stExpander"] summary p,
-        div[data-testid="stExpander"] summary div {
+        /* Only target the text label (p) — NOT span, which carries Streamlit's
+           Material Icons chevron glyph. Overriding font-family on that span
+           breaks the icon and renders raw text like "arrow_down". */
+        div[data-testid="stExpander"] summary p {
             color: var(--txt-primary) !important;
             font-weight: 600 !important;
             font-family: 'Source Sans 3', sans-serif !important;
+        }
+        /* Chevron icon span — preserve the icon font, just fix colour */
+        div[data-testid="stExpander"] summary span {
+            color: var(--txt-muted) !important;
         }
         div[data-testid="stExpander"] [data-testid="stExpanderDetails"],
         div[data-testid="stExpander"] details > div {
