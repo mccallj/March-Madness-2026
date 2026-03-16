@@ -670,166 +670,397 @@ def build_bracket_html():
 
 # ── SECTION 7: PDF Export ─────────────────────────────────────────────────────
 
-def generate_pdf(user_name):
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(
-        buffer,
-        pagesize=landscape(letter),
-        rightMargin=0.4 * inch,
-        leftMargin=0.4 * inch,
-        topMargin=0.35 * inch,
-        bottomMargin=0.35 * inch,
-    )
+# ── Page-1 helpers ────────────────────────────────────────────────────────────
 
-    styles = getSampleStyleSheet()
-    title_style = ParagraphStyle(
-        "BTitle", fontName="Helvetica-Bold", fontSize=15,
-        alignment=TA_CENTER, spaceAfter=4,
-    )
-    sub_style = ParagraphStyle(
-        "BSub", fontName="Helvetica", fontSize=8,
-        alignment=TA_CENTER, spaceAfter=10,
-        textColor=rl_colors.HexColor("#555555"),
-    )
-    region_hdr = ParagraphStyle(
-        "RHdr", fontName="Helvetica-Bold", fontSize=9,
-        spaceAfter=4, textColor=rl_colors.HexColor("#000000"),
-    )
-    round_hdr = ParagraphStyle(
-        "RdHdr", fontName="Helvetica-BoldOblique", fontSize=7.5,
-        spaceBefore=4, spaceAfter=2,
-        textColor=rl_colors.HexColor("#333333"),
-    )
-    team_style = ParagraphStyle(
-        "Team", fontName="Helvetica", fontSize=7.5,
-        leftIndent=6, spaceAfter=1,
-    )
-    team_winner = ParagraphStyle(
-        "Winner", fontName="Helvetica-Bold", fontSize=7.5,
-        leftIndent=6, spaceAfter=1,
-        textColor=rl_colors.HexColor("#6aaa64"),
-    )
-    champ_style = ParagraphStyle(
-        "Champ", fontName="Helvetica-Bold", fontSize=14,
-        alignment=TA_CENTER, spaceBefore=8, spaceAfter=4,
-        textColor=rl_colors.HexColor("#6aaa64"),
-    )
-    champ_lbl = ParagraphStyle(
-        "ChampLbl", fontName="Helvetica-Bold", fontSize=9,
-        alignment=TA_CENTER, spaceBefore=6, spaceAfter=2,
-        textColor=rl_colors.HexColor("#555555"),
-    )
+def _pdf_tstat(ss, team, game_id, round_key):
+    """Return 'picked' | 'eliminated' | 'unpicked' for a team in the PDF context."""
+    if not team or team in ("—", "TBD"):
+        return "unpicked"
+    if round_key == "picks_championship":
+        pick = ss.get("picks_championship")
+    else:
+        pick = ss.get(round_key, {}).get(game_id)
+    if not pick:
+        return "unpicked"
+    return "picked" if pick == team else "eliminated"
 
-    def pick_para(team, game_id, round_key):
-        if not team:
-            return Paragraph("—", team_style)
-        status = get_team_status(team, game_id, round_key)
-        safe = team.replace("&", "&amp;")
-        style = team_winner if status == "picked" else team_style
-        prefix = "✓ " if status == "picked" else "  "
-        return Paragraph(f"{prefix}{safe}", style)
 
-    def build_region_col(region_key):
-        items = []
-        region = REGIONS[region_key]
-        items.append(Paragraph(region["name"], region_hdr))
+def _pdf_draw_box(c, cx, cy, team, game_id, round_key, ss, slot_w, slot_h):
+    """Draw a color-coded team name box centered at (cx, cy)."""
+    C_GREEN  = rl_colors.HexColor("#6aaa64")
+    C_GRAY   = rl_colors.HexColor("#787c7e")
+    C_BORDER = rl_colors.HexColor("#cccccc")
 
-        # R64
-        items.append(Paragraph("Round of 64", round_hdr))
-        for m in region["matchups"]:
-            items.append(pick_para(m["team_a"], m["game_id"], "picks_r64"))
-            items.append(pick_para(m["team_b"], m["game_id"], "picks_r64"))
-            items.append(Spacer(1, 2))
+    sw, sh = slot_w - 2.0, slot_h
+    x, y   = cx - sw / 2.0, cy - sh / 2.0
+    status = _pdf_tstat(ss, team, game_id, round_key)
 
-        # R32
-        items.append(Paragraph("Round of 32", round_hdr))
-        for i in range(4):
-            gid = f"{region_key}_r32_{i}"
-            winner = st.session_state["picks_r32"].get(gid, "—")
-            safe = winner.replace("&", "&amp;") if winner and winner != "—" else "—"
-            items.append(Paragraph(f"  {safe}", team_style))
+    fill   = C_GREEN if status == "picked" else (C_GRAY if status == "eliminated" else rl_colors.white)
+    txt_c  = rl_colors.white if status in ("picked", "eliminated") else rl_colors.black
 
-        # S16
-        items.append(Paragraph("Sweet 16", round_hdr))
-        for i in range(2):
-            gid = f"{region_key}_s16_{i}"
-            winner = st.session_state["picks_s16"].get(gid, "—")
-            safe = winner.replace("&", "&amp;") if winner and winner != "—" else "—"
-            items.append(Paragraph(f"  {safe}", team_style))
+    c.setFillColor(fill)
+    c.setStrokeColor(C_BORDER)
+    c.setLineWidth(0.4)
+    c.rect(x, y, sw, sh, fill=1, stroke=1)
 
-        # E8
-        items.append(Paragraph("Elite Eight", round_hdr))
-        gid = f"{region_key}_e8_0"
-        winner = st.session_state["picks_e8"].get(gid, "—")
-        safe = winner.replace("&", "&amp;") if winner and winner != "—" else "—"
-        items.append(Paragraph(f"  {safe}", team_winner if winner and winner != "—" else team_style))
+    lbl = str(team or "—")
+    if len(lbl) > 17:
+        lbl = lbl[:16] + "…"
+    c.setFillColor(txt_c)
+    c.setFont("Helvetica", 5.5)
+    c.drawCentredString(cx, y + sh * 0.30, lbl)
 
-        return items
 
-    # Build 4-column region table
-    col_data = [build_region_col(rk) for rk in REGION_ORDER]
-    max_rows = max(len(c) for c in col_data)
-    empty = Paragraph("", team_style)
-    rows = []
-    for i in range(max_rows):
-        row = [col_data[r][i] if i < len(col_data[r]) else empty for r in range(4)]
-        rows.append(row)
+def _pdf_page1_visual(c, ss, resolved, user_name):
+    """Draw the visual bracket (canvas, landscape letter)."""
+    PAGE_W, PAGE_H = landscape(letter)
 
-    avail_w = 10.2 * inch
-    col_w = avail_w / 4
-    region_table = Table(rows, colWidths=[col_w] * 4, repeatRows=0)
-    region_table.setStyle(TableStyle([
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("TOPPADDING", (0, 0), (-1, -1), 1),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 1),
-        ("LINEAFTER", (0, 0), (2, -1), 0.5, rl_colors.HexColor("#cccccc")),
-        ("BACKGROUND", (0, 0), (-1, 0), rl_colors.HexColor("#f0f0f0")),
-    ]))
+    ML = MR = 28.0
+    MT      = 28.0
+    MB      = 18.0
+    HDR_H   = 28.0
 
-    # Final Four section
-    ff_data = []
-    for m in get_ff_matchups():
-        a = m["team_a"] or "—"
-        b = m["team_b"] or "—"
-        w = st.session_state["picks_ff"].get(m["game_id"], "—")
-        ff_data.append([
-            Paragraph(m["label"], ParagraphStyle("ffl", fontName="Helvetica-Bold",
-                fontSize=7.5, textColor=rl_colors.HexColor("#555"))),
-            Paragraph(f"{a} vs. {b}", ParagraphStyle("ffm", fontName="Helvetica",
-                fontSize=7.5)),
-            Paragraph(f"Winner: {w}", ParagraphStyle("ffw", fontName="Helvetica-Bold",
-                fontSize=7.5, textColor=rl_colors.HexColor("#6aaa64"))),
-        ])
+    avail_w  = PAGE_W - ML - MR        # 736
+    avail_h  = PAGE_H - MT - MB - HDR_H  # 538
 
-    champion = st.session_state.get("picks_championship") or "—"
+    FF_W     = 100.0
+    REGION_W = (avail_w - FF_W) / 2.0   # 318
+    ROW_GAP  = 8.0
+    REGION_H = (avail_h - ROW_GAP) / 2.0  # 265
+
+    N_ROUNDS = 4
+    SLOT_W   = 55.0
+    SLOT_H   = 13.0
+    col_gap  = (REGION_W - N_ROUNDS * SLOT_W) / (N_ROUNDS - 1)  # ≈ 32.7
+    UNIT_H   = REGION_H / 8.0
+
+    TOP_ROW_TOP = PAGE_H - MT - HDR_H          # ≈ 556
+    BOT_ROW_TOP = TOP_ROW_TOP - REGION_H - ROW_GAP
+
+    C_LINE  = rl_colors.HexColor("#bbbbbb")
+    C_LABEL = rl_colors.HexColor("#333333")
+    C_MUTED = rl_colors.HexColor("#888888")
+    C_GREEN = rl_colors.HexColor("#6aaa64")
+    C_BDR   = rl_colors.HexColor("#cccccc")
+
+    # Region layout: x_left, y_row_top, mirror
+    regions_pos = {
+        "east":    (ML,                    TOP_ROW_TOP, False),
+        "west":    (ML + REGION_W + FF_W,  TOP_ROW_TOP, True),
+        "midwest": (ML,                    BOT_ROW_TOP, False),
+        "south":   (ML + REGION_W + FF_W,  BOT_ROW_TOP, True),
+    }
+
+    def gcy(y_top, rnd, g):
+        return y_top - (g + 0.5) * UNIT_H * (2 ** rnd)
+
+    def gcx(x_left, rnd, mirror):
+        if not mirror:
+            return x_left + rnd * (SLOT_W + col_gap) + SLOT_W / 2.0
+        return x_left + REGION_W - rnd * (SLOT_W + col_gap) - SLOT_W / 2.0
+
+    def draw_connectors(x_left, y_top, rnd, n_games, mirror):
+        cx0 = gcx(x_left, rnd,     mirror)
+        cx1 = gcx(x_left, rnd + 1, mirror)
+        xs  = cx0 + SLOT_W / 2.0 if not mirror else cx0 - SLOT_W / 2.0
+        xn  = cx1 - SLOT_W / 2.0 if not mirror else cx1 + SLOT_W / 2.0
+        xv  = (xs + xn) / 2.0
+        c.setStrokeColor(C_LINE)
+        c.setLineWidth(0.5)
+        for g in range(n_games):
+            cy_g = gcy(y_top, rnd, g)
+            c.line(xs, cy_g, xv, cy_g)
+            if g % 2 == 0:
+                cy_s = gcy(y_top, rnd, g + 1) if g + 1 < n_games else cy_g
+                cy_p = (cy_g + cy_s) / 2.0
+                c.line(xv, cy_g, xv, cy_s)
+                c.line(xv, cy_p, xn, cy_p)
+
+    def draw_region(rk, x_left, y_top, mirror):
+        region   = resolved[rk]
+        matchups = region["matchups"]
+
+        # Region label
+        c.setFont("Helvetica-Bold", 7)
+        c.setFillColor(C_LABEL)
+        c.drawCentredString(x_left + REGION_W / 2.0, y_top + 2, region["name"] + " REGION")
+
+        # R64 — two stacked team boxes per game
+        cx0 = gcx(x_left, 0, mirror)
+        for g, m in enumerate(matchups):
+            cy = gcy(y_top, 0, g)
+            _pdf_draw_box(c, cx0, cy + SLOT_H / 2.0 + 0.5,
+                          m["team_a"], m["game_id"], "picks_r64", ss, SLOT_W, SLOT_H)
+            _pdf_draw_box(c, cx0, cy - SLOT_H / 2.0 - 0.5,
+                          m["team_b"], m["game_id"], "picks_r64", ss, SLOT_W, SLOT_H)
+
+        # R32, S16, E8 — single winner box per game
+        for rnd, rkey, gids in [
+            (1, "picks_r32", [f"{rk}_r32_{i}" for i in range(4)]),
+            (2, "picks_s16", [f"{rk}_s16_{i}" for i in range(2)]),
+            (3, "picks_e8",  [f"{rk}_e8_0"]),
+        ]:
+            cx = gcx(x_left, rnd, mirror)
+            for g, gid in enumerate(gids):
+                cy     = gcy(y_top, rnd, g)
+                winner = ss.get(rkey, {}).get(gid) or "—"
+                _pdf_draw_box(c, cx, cy, winner, gid, rkey, ss, SLOT_W, SLOT_H)
+
+        # Connector lines between adjacent rounds
+        for rnd, n in [(0, 8), (1, 4), (2, 2)]:
+            draw_connectors(x_left, y_top, rnd, n, mirror)
+
+    # ── Page header ───────────────────────────────────────────────────────────
+    c.setFont("Helvetica-Bold", 12)
+    c.setFillColor(rl_colors.black)
+    c.drawCentredString(PAGE_W / 2.0, PAGE_H - MT - 14,
+                        f"{user_name}'s 2026 March Madness Bracket")
+    c.setFont("Helvetica", 7)
+    c.setFillColor(C_MUTED)
+    c.drawCentredString(PAGE_W / 2.0, PAGE_H - MT - 23,
+                        "Visual Bracket  ·  " + datetime.now().strftime("%B %d, %Y"))
+
+    # ── Draw all 4 regions ────────────────────────────────────────────────────
+    for rk in REGION_ORDER:
+        x_l, y_t, mir = regions_pos[rk]
+        draw_region(rk, x_l, y_t, mir)
+
+    # ── Horizontal separator between rows ─────────────────────────────────────
+    sep_y = TOP_ROW_TOP - REGION_H - ROW_GAP / 2.0
+    c.setStrokeColor(rl_colors.HexColor("#eeeeee"))
+    c.setLineWidth(0.5)
+    c.line(ML, sep_y, PAGE_W - MR, sep_y)
+
+    # ── Center Final Four + Championship column ───────────────────────────────
+    ff_cx   = ML + REGION_W + FF_W / 2.0   # = PAGE_W/2
+    BOX_W_FF = FF_W - 12.0
+    ff0_cy  = TOP_ROW_TOP - REGION_H / 2.0
+    ff1_cy  = BOT_ROW_TOP - REGION_H / 2.0
+    champ_cy = sep_y
+
+    # FF header label
+    c.setFont("Helvetica-Bold", 7)
+    c.setFillColor(C_MUTED)
+    c.drawCentredString(ff_cx, PAGE_H - MT - HDR_H / 2.0, "FINAL FOUR")
+
+    def draw_ff_box(cx, cy, label_text, winner, game_id, rkey):
+        c.setFont("Helvetica", 6)
+        c.setFillColor(C_MUTED)
+        c.drawCentredString(cx, cy + BOX_W_FF / 2.0 * 0.35 + 9, label_text)
+        sw, sh = BOX_W_FF - 2.0, SLOT_H + 2.0
+        x, y   = cx - sw / 2.0, cy - sh / 2.0
+        status = _pdf_tstat(ss, winner, game_id, rkey)
+        fill   = C_GREEN if status == "picked" else (
+                 rl_colors.HexColor("#787c7e") if status == "eliminated" else rl_colors.white)
+        txt_c  = rl_colors.white if status in ("picked", "eliminated") else rl_colors.black
+        c.setFillColor(fill)
+        c.setStrokeColor(C_BDR)
+        c.setLineWidth(0.5)
+        c.rect(x, y, sw, sh, fill=1, stroke=1)
+        lbl = str(winner or "—")
+        if len(lbl) > 15: lbl = lbl[:14] + "…"
+        c.setFillColor(txt_c)
+        c.setFont("Helvetica-Bold", 6)
+        c.drawCentredString(cx, y + sh * 0.30, lbl)
+
+    # FF game 0 (East vs West — top row center)
+    ff_w0 = ss.get("picks_ff", {}).get("ff_game_0") or "—"
+    draw_ff_box(ff_cx, ff0_cy, "East vs West", ff_w0, "ff_game_0", "picks_ff")
+
+    # FF game 1 (Midwest vs South — bottom row center)
+    ff_w1 = ss.get("picks_ff", {}).get("ff_game_1") or "—"
+    draw_ff_box(ff_cx, ff1_cy, "Midwest vs South", ff_w1, "ff_game_1", "picks_ff")
+
+    # Championship box at separator
+    champ = ss.get("picks_championship") or "—"
+    c.setFont("Helvetica-Bold", 7)
+    c.setFillColor(C_MUTED)
+    c.drawCentredString(ff_cx, champ_cy + SLOT_H + 6, "CHAMPIONSHIP")
+    sw_ch, sh_ch = BOX_W_FF, SLOT_H + 3.0
+    x_ch, y_ch   = ff_cx - sw_ch / 2.0, champ_cy - sh_ch / 2.0
+    c.setFillColor(C_GREEN if champ != "—" else rl_colors.white)
+    c.setStrokeColor(C_BDR)
+    c.setLineWidth(0.6)
+    c.rect(x_ch, y_ch, sw_ch, sh_ch, fill=1, stroke=1)
+    lbl_ch = str(champ)
+    if len(lbl_ch) > 15: lbl_ch = lbl_ch[:14] + "…"
+    c.setFillColor(rl_colors.white if champ != "—" else rl_colors.black)
+    c.setFont("Helvetica-Bold", 6.5)
+    c.drawCentredString(ff_cx, y_ch + sh_ch * 0.30, lbl_ch)
+    c.setFont("Helvetica-Bold", 6)
+    c.setFillColor(C_GREEN)
+    c.drawCentredString(ff_cx, y_ch - 8, "CHAMPION")
+
+    # Vertical connector: FF0 box bottom → championship box top
+    c.setStrokeColor(C_LINE)
+    c.setLineWidth(0.5)
+    c.line(ff_cx, ff0_cy - (SLOT_H + 2.0) / 2.0 - 1,
+           ff_cx, champ_cy + sh_ch / 2.0 + 1)
+    # Vertical connector: FF1 box top → championship box bottom
+    c.line(ff_cx, ff1_cy + (SLOT_H + 2.0) / 2.0 + 1,
+           ff_cx, champ_cy - sh_ch / 2.0 - 1)
+
+
+# ── Page-2 text summary ───────────────────────────────────────────────────────
+
+def _pdf_page2_text(c, ss, resolved, user_name):
+    """Draw text picks summary on a new canvas page (landscape letter)."""
+    PAGE_W, PAGE_H = landscape(letter)
+    ML = MR = 28.0
+    MT      = 28.0
+    MB      = 18.0
+
+    avail_w = PAGE_W - ML - MR
+    col_w   = avail_w / 4.0
+
+    C_GREEN = rl_colors.HexColor("#6aaa64")
+    C_GRAY  = rl_colors.HexColor("#999999")
+    C_HDR   = rl_colors.HexColor("#333333")
+    C_MID   = rl_colors.HexColor("#555555")
+    C_DIV   = rl_colors.HexColor("#dddddd")
+    LH      = 9.5   # line height (pt)
 
     export_time = datetime.now().strftime("%B %d, %Y at %I:%M %p")
-    story = [
-        Paragraph(f"{user_name}'s 2026 March Madness Bracket", title_style),
-        Paragraph(f"Exported {export_time}", sub_style),
-        region_table,
-        Spacer(1, 8),
-        Paragraph("FINAL FOUR", ParagraphStyle("ffhdr", fontName="Helvetica-Bold",
-            fontSize=9, alignment=TA_CENTER, textColor=rl_colors.HexColor("#555"), spaceBefore=4)),
-    ]
 
-    if ff_data:
-        ff_table = Table(ff_data, colWidths=[avail_w * 0.35, avail_w * 0.40, avail_w * 0.25])
-        ff_table.setStyle(TableStyle([
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("TOPPADDING", (0, 0), (-1, -1), 3),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-            ("BOX", (0, 0), (-1, -1), 0.5, rl_colors.HexColor("#cccccc")),
-            ("INNERGRID", (0, 0), (-1, -1), 0.5, rl_colors.HexColor("#cccccc")),
-        ]))
-        story.append(ff_table)
+    # Header
+    c.setFont("Helvetica-Bold", 13)
+    c.setFillColor(rl_colors.black)
+    c.drawCentredString(PAGE_W / 2.0, PAGE_H - MT - 14,
+                        f"{user_name}'s 2026 March Madness Picks")
+    c.setFont("Helvetica", 7.5)
+    c.setFillColor(C_MID)
+    c.drawCentredString(PAGE_W / 2.0, PAGE_H - MT - 25,
+                        f"Exported {export_time}")
 
-    story += [
-        Paragraph("2026 NCAA CHAMPION", champ_lbl),
-        Paragraph(champion.replace("&", "&amp;"), champ_style),
-    ]
+    y_start = PAGE_H - MT - 40
 
-    doc.build(story)
+    for col_idx, rk in enumerate(REGION_ORDER):
+        region = resolved[rk]
+        x = ML + col_idx * col_w + 4.0
+        y = y_start
+
+        # Column divider
+        if col_idx > 0:
+            c.setStrokeColor(C_DIV)
+            c.setLineWidth(0.5)
+            c.line(ML + col_idx * col_w, y_start + 2, ML + col_idx * col_w, MB + 50)
+
+        # Region header
+        c.setFont("Helvetica-Bold", 9)
+        c.setFillColor(rl_colors.black)
+        c.drawString(x, y, region["name"] + " REGION")
+        c.setStrokeColor(C_HDR)
+        c.setLineWidth(0.5)
+        c.line(x, y - 1.5, x + col_w - 8, y - 1.5)
+        y -= LH * 1.6
+
+        # R64
+        c.setFont("Helvetica-Bold", 7)
+        c.setFillColor(C_MID)
+        c.drawString(x, y, "ROUND OF 64")
+        y -= LH
+
+        c.setFont("Helvetica", 6.5)
+        for m in region["matchups"]:
+            pick = ss.get("picks_r64", {}).get(m["game_id"])
+            for team in (m["team_a"], m["team_b"]):
+                if pick == team:
+                    c.setFillColor(C_GREEN)
+                    prefix = "✓ "
+                elif pick and pick != team:
+                    c.setFillColor(C_GRAY)
+                    prefix = "  "
+                else:
+                    c.setFillColor(rl_colors.black)
+                    prefix = "  "
+                c.drawString(x + 5, y, f"{prefix}{(team or '—')[:22]}")
+                y -= LH
+            y -= 1
+
+        # R32
+        c.setFont("Helvetica-Bold", 7)
+        c.setFillColor(C_MID)
+        c.drawString(x, y, "ROUND OF 32")
+        y -= LH
+        c.setFont("Helvetica", 6.5)
+        for i in range(4):
+            w = ss.get("picks_r32", {}).get(f"{rk}_r32_{i}") or "—"
+            c.setFillColor(C_GREEN if w != "—" else C_GRAY)
+            c.drawString(x + 5, y, f"  {w[:22]}")
+            y -= LH
+
+        # S16
+        c.setFont("Helvetica-Bold", 7)
+        c.setFillColor(C_MID)
+        c.drawString(x, y, "SWEET 16")
+        y -= LH
+        c.setFont("Helvetica", 6.5)
+        for i in range(2):
+            w = ss.get("picks_s16", {}).get(f"{rk}_s16_{i}") or "—"
+            c.setFillColor(C_GREEN if w != "—" else C_GRAY)
+            c.drawString(x + 5, y, f"  {w[:22]}")
+            y -= LH
+
+        # E8
+        c.setFont("Helvetica-Bold", 7)
+        c.setFillColor(C_MID)
+        c.drawString(x, y, "ELITE EIGHT")
+        y -= LH
+        w = ss.get("picks_e8", {}).get(f"{rk}_e8_0") or "—"
+        c.setFont("Helvetica-Bold", 6.5)
+        c.setFillColor(C_GREEN if w != "—" else C_GRAY)
+        c.drawString(x + 5, y, f"  {w[:22]}")
+
+    # Final Four + Championship footer
+    ff_base = MB + 52
+    c.setStrokeColor(C_DIV)
+    c.setLineWidth(0.5)
+    c.line(ML, ff_base + 20, PAGE_W - MR, ff_base + 20)
+
+    c.setFont("Helvetica-Bold", 8.5)
+    c.setFillColor(C_HDR)
+    c.drawCentredString(PAGE_W / 2.0, ff_base + 10, "FINAL FOUR")
+
+    for idx, (gid, label) in enumerate([
+        ("ff_game_0", "East vs West"),
+        ("ff_game_1", "Midwest vs South"),
+    ]):
+        fx = ML + avail_w * (0.15 + idx * 0.38)
+        winner = ss.get("picks_ff", {}).get(gid) or "—"
+        c.setFont("Helvetica", 7)
+        c.setFillColor(C_MID)
+        c.drawString(fx, ff_base - 2, f"{label}:")
+        c.setFont("Helvetica-Bold", 8)
+        c.setFillColor(C_GREEN if winner != "—" else rl_colors.black)
+        c.drawString(fx, ff_base - 13, winner[:26])
+
+    champ = ss.get("picks_championship") or "—"
+    c.setFont("Helvetica-Bold", 9)
+    c.setFillColor(C_HDR)
+    c.drawCentredString(PAGE_W / 2.0, ff_base - 26, "2026 NCAA CHAMPION")
+    c.setFont("Helvetica-Bold", 15)
+    c.setFillColor(C_GREEN if champ != "—" else rl_colors.black)
+    c.drawCentredString(PAGE_W / 2.0, ff_base - 43, champ[:30])
+
+
+# ── Main export function ──────────────────────────────────────────────────────
+
+def generate_pdf(user_name):
+    from reportlab.pdfgen import canvas as rl_canvas
+
+    buffer   = io.BytesIO()
+    c        = rl_canvas.Canvas(buffer, pagesize=landscape(letter))
+    ss       = st.session_state
+    resolved = resolve_tbd_teams()
+
+    # Page 1 — visual bracket
+    _pdf_page1_visual(c, ss, resolved, user_name)
+    c.showPage()
+
+    # Page 2 — text picks summary
+    _pdf_page2_text(c, ss, resolved, user_name)
+    c.save()
+
     return buffer.getvalue()
 
 # ── SECTION 8: CSS Injection (light + dark adaptive) ─────────────────────────
