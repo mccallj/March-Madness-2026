@@ -804,23 +804,151 @@ def inject_css():
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap');
 
-        .stApp {
-            background-color: #ffffff;
-            font-family: 'Inter', 'Clear Sans', 'Helvetica Neue', Arial, sans-serif;
+        /* ── Force light-mode palette on every Streamlit container ───────────
+           These overrides beat Streamlit's CSS variables in both light AND
+           dark OS/browser modes, so the app always looks intentional.       */
+
+        /* Root colour tokens – overwrite Streamlit's dark-mode variables */
+        :root, [data-theme="dark"], [data-theme="light"] {
+            --background-color:           #ffffff !important;
+            --secondary-background-color: #f7f7f7 !important;
+            --text-color:                 #000000 !important;
+            --font:                       'Inter', 'Helvetica Neue', Arial, sans-serif !important;
         }
+
+        /* Main app shell */
+        .stApp,
+        .stApp > header,
+        [data-testid="stAppViewContainer"],
+        [data-testid="stAppViewBlockContainer"],
+        [data-testid="block-container"],
+        .main .block-container {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif !important;
+        }
+
+        /* Every generic element inside the app */
+        .stApp p,
+        .stApp span,
+        .stApp div,
+        .stApp li,
+        .stApp label,
+        .stApp small,
+        .stApp strong,
+        .stApp em,
+        .element-container,
+        .stMarkdown,
+        .stMarkdown p,
+        .stMarkdown li {
+            color: #000000 !important;
+        }
+
+        /* Headings */
         .stApp h1 {
-            font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-            font-weight: 900;
-            font-size: 2rem;
-            letter-spacing: -1px;
-            color: #000;
+            font-weight: 900 !important;
+            font-size: 2rem !important;
+            letter-spacing: -1px !important;
+            color: #000000 !important;
         }
-        .stApp h2, .stApp h3 {
-            font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-            font-weight: 800;
-            color: #000;
-            letter-spacing: -0.5px;
+        .stApp h2,
+        .stApp h3,
+        .stApp h4 {
+            font-weight: 800 !important;
+            color: #000000 !important;
+            letter-spacing: -0.5px !important;
         }
+
+        /* Horizontal rule */
+        hr {
+            border-color: #d3d6da !important;
+        }
+
+        /* ── Sidebar ──────────────────────────────────────────────────────── */
+        [data-testid="stSidebar"],
+        [data-testid="stSidebar"] > div,
+        [data-testid="stSidebar"] [data-testid="stSidebarContent"] {
+            background-color: #f7f7f7 !important;
+            color: #000000 !important;
+            border-right: 2px solid #d3d6da !important;
+        }
+        [data-testid="stSidebar"] p,
+        [data-testid="stSidebar"] span,
+        [data-testid="stSidebar"] div,
+        [data-testid="stSidebar"] label,
+        [data-testid="stSidebar"] small {
+            color: #000000 !important;
+        }
+
+        /* ── Expanders ────────────────────────────────────────────────────── */
+        div[data-testid="stExpander"] {
+            border: 1.5px solid #d3d6da !important;
+            border-radius: 4px !important;
+            background-color: #ffffff !important;
+            margin-bottom: 8px !important;
+        }
+        /* Header row (collapsed/expanded toggle) */
+        div[data-testid="stExpander"] summary,
+        div[data-testid="stExpander"] > details > summary,
+        div[data-testid="stExpander"] [data-testid="stExpanderToggleIcon"],
+        div[data-testid="stExpander"] > div:first-child {
+            background-color: #f7f7f7 !important;
+            color: #000000 !important;
+        }
+        div[data-testid="stExpander"] summary span,
+        div[data-testid="stExpander"] summary p,
+        div[data-testid="stExpander"] summary div {
+            color: #000000 !important;
+        }
+        /* Body of open expander */
+        div[data-testid="stExpander"] [data-testid="stExpanderDetails"],
+        div[data-testid="stExpander"] details > div {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+        }
+
+        /* ── Radio buttons ────────────────────────────────────────────────── */
+        div[data-testid="stRadio"] {
+            background-color: transparent !important;
+        }
+        div[data-testid="stRadio"] label,
+        div[data-testid="stRadio"] label span,
+        div[data-testid="stRadio"] label p,
+        div[data-testid="stRadio"] > label {
+            color: #000000 !important;
+            font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif !important;
+            font-size: 14px !important;
+        }
+        /* The radio circle itself – keep it visible */
+        div[data-testid="stRadio"] input[type="radio"] + div {
+            border-color: #000000 !important;
+        }
+        div[data-testid="stRadio"] input[type="radio"]:checked + div {
+            background-color: #000000 !important;
+            border-color:     #000000 !important;
+        }
+
+        /* ── Text inputs ──────────────────────────────────────────────────── */
+        .stTextInput > div > div,
+        .stTextInput > div > div > input {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            border: 2px solid #000000 !important;
+            border-radius: 4px !important;
+            font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif !important;
+            font-size: 15px !important;
+            padding: 8px 12px !important;
+        }
+        .stTextInput > div > div > input:focus {
+            border-color: #6aaa64 !important;
+            box-shadow: 0 0 0 2px rgba(106, 170, 100, 0.25) !important;
+        }
+        .stTextInput label,
+        .stTextInput label span {
+            color: #000000 !important;
+        }
+
+        /* ── Buttons ──────────────────────────────────────────────────────── */
         .stButton > button {
             background-color: #000000 !important;
             color: #ffffff !important;
@@ -835,51 +963,73 @@ def inject_css():
         }
         .stButton > button:hover {
             background-color: #222222 !important;
-            transform: none !important;
         }
+        /* Secondary / Reset button */
         .stButton > button[kind="secondary"],
         .stButton > button[data-testid="baseButton-secondary"] {
             background-color: #ffffff !important;
             color: #000000 !important;
             border: 2px solid #000000 !important;
         }
-        .stTextInput > div > div > input {
-            border: 2px solid #000 !important;
+        .stButton > button[kind="secondary"]:hover,
+        .stButton > button[data-testid="baseButton-secondary"]:hover {
+            background-color: #f0f0f0 !important;
+        }
+
+        /* ── Download button ──────────────────────────────────────────────── */
+        .stDownloadButton > button {
+            background-color: #000000 !important;
+            color: #ffffff !important;
+            border: none !important;
             border-radius: 4px !important;
-            font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif !important;
-            font-size: 15px !important;
-            padding: 8px 12px !important;
+            font-weight: 700 !important;
+            letter-spacing: 1px !important;
+            text-transform: uppercase !important;
+            font-size: 13px !important;
         }
-        .stTextInput > div > div > input:focus {
-            border-color: #6aaa64 !important;
-            box-shadow: 0 0 0 2px rgba(106, 170, 100, 0.25) !important;
-        }
-        div[data-testid="stExpander"] {
-            border: 1.5px solid #d3d6da !important;
-            border-radius: 4px !important;
-            margin-bottom: 8px !important;
-        }
-        div[data-testid="stExpander"] > div:first-child {
-            background-color: #f7f7f7 !important;
-        }
+
+        /* ── Progress bar ─────────────────────────────────────────────────── */
+        [data-testid="stProgressBar"] > div,
         .stProgress > div > div > div > div {
             background-color: #6aaa64 !important;
         }
+        [data-testid="stProgressBar"],
+        .stProgress > div > div {
+            background-color: #e0e0e0 !important;
+        }
+
+        /* ── Alert / info / success / warning boxes ───────────────────────── */
+        div[data-testid="stAlert"],
         .stAlert {
             border-radius: 4px !important;
-        }
-        div[data-testid="stSidebar"] {
             background-color: #f7f7f7 !important;
-            border-right: 2px solid #d3d6da !important;
+            color: #000000 !important;
         }
-        div[data-testid="stRadio"] label {
-            font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif !important;
-            font-size: 14px !important;
+        div[data-testid="stAlert"] p,
+        div[data-testid="stAlert"] span {
+            color: #000000 !important;
         }
+        /* Keep Streamlit's coloured left-border for success/info/warning */
+        div[data-testid="stAlert"][data-baseweb="notification"] {
+            background-color: #f7f7f7 !important;
+        }
+
+        /* ── Spinner / status widget ──────────────────────────────────────── */
+        [data-testid="stStatusWidget"] span,
+        [data-testid="stSpinner"] span {
+            color: #000000 !important;
+        }
+
+        /* ── Info callout text (st.info) ──────────────────────────────────── */
+        .stInfo, .stInfo p, .stInfo span { color: #000000 !important; }
+        .stSuccess, .stSuccess p, .stSuccess span { color: #000000 !important; }
+        .stWarning, .stWarning p, .stWarning span { color: #000000 !important; }
+
+        /* ── Custom component helpers ─────────────────────────────────────── */
         .nyt-badge {
             display: inline-block;
-            background: #000;
-            color: #fff;
+            background: #000000;
+            color: #ffffff !important;
             font-size: 11px;
             font-weight: 800;
             letter-spacing: 2px;
@@ -893,15 +1043,15 @@ def inject_css():
             font-weight: 800;
             letter-spacing: 2px;
             text-transform: uppercase;
-            color: #555;
+            color: #555555 !important;
             padding: 8px 0 4px;
-            border-bottom: 2px solid #000;
+            border-bottom: 2px solid #000000;
             margin-bottom: 12px;
         }
         .game-divider {
-            border: none;
-            border-top: 1px solid #eee;
-            margin: 6px 0;
+            border: none !important;
+            border-top: 1px solid #e0e0e0 !important;
+            margin: 6px 0 !important;
         }
         </style>
         """,
@@ -911,7 +1061,7 @@ def inject_css():
 # ── SECTION 9: Phase Renderers ────────────────────────────────────────────────
 
 def render_phase_0():
-    st.markdown('<div class="nyt-badge">Family Bracket Challenge</div>', unsafe_allow_html=True)
+    st.markdown('<div class="nyt-badge">McCall Family Bracket Challenge</div>', unsafe_allow_html=True)
     st.title("2026 March Madness Bracket")
     st.markdown("---")
     st.markdown("### Enter Your Name to Begin")
@@ -1269,7 +1419,7 @@ def render_sidebar():
             """
             <div style="font-size:11px;font-weight:800;letter-spacing:2px;
             text-transform:uppercase;color:#555;margin-bottom:4px;">
-            Family Bracket Challenge
+            McCall Family Bracket Challenge
             </div>
             <div style="font-size:20px;font-weight:900;color:#000;line-height:1.1;
             margin-bottom:16px;">
