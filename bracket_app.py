@@ -275,12 +275,48 @@ def get_team_status(team, game_id, round_key):
 
 def _bracket_css():
     return """
+    /* ── CSS tokens — light defaults ── */
+    :root {
+        --bg:           #F9FAFB;
+        --surface:      #FFFFFF;
+        --txt:          #111827;
+        --txt-muted:    #6B7280;
+        --txt-faint:    #9CA3AF;
+        --border:       #D1D5DB;
+        --line:         rgba(150,160,180,0.45);
+        --picked-bg:    #6aaa64;
+        --picked-txt:   #ffffff;
+        --elim-bg:      #787c7e;
+        --elim-txt:     #ffffff;
+        --sep:          #E5E7EB;
+        --ff-bg:        #F3F4F6;
+        --champ-color:  #6aaa64;
+    }
+    /* ── Dark mode overrides ── */
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --bg:           #0E1117;
+            --surface:      #1C2333;
+            --txt:          #F0F4FF;
+            --txt-muted:    #8899BB;
+            --txt-faint:    #4D618A;
+            --border:       #2D3D5A;
+            --line:         rgba(100,120,160,0.5);
+            --picked-bg:    #166534;
+            --picked-txt:   #86efac;
+            --elim-bg:      #1f2937;
+            --elim-txt:     #6B7280;
+            --sep:          #1A2540;
+            --ff-bg:        #252D42;
+            --champ-color:  #4ade80;
+        }
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-        font-family: 'Clear Sans', 'Helvetica Neue', Arial, sans-serif;
-        background: #f7f7f7;
+        font-family: 'Source Sans 3', 'Helvetica Neue', Arial, sans-serif;
+        background: var(--bg);
         padding: 16px;
-        color: #000;
+        color: var(--txt);
     }
     .bracket-title {
         font-size: 13px;
@@ -289,7 +325,7 @@ def _bracket_css():
         text-transform: uppercase;
         text-align: center;
         margin-bottom: 16px;
-        color: #000;
+        color: var(--txt);
     }
     .region-label {
         font-size: 11px;
@@ -298,40 +334,40 @@ def _bracket_css():
         text-transform: uppercase;
         text-align: center;
         margin-bottom: 6px;
-        color: #555;
+        color: var(--txt-muted);
     }
     .ts {
         height: 24px;
         width: 148px;
-        border: 1.5px solid #d3d6da;
+        border: 1.5px solid var(--border);
         display: flex;
         align-items: center;
         padding: 0 5px;
         font-size: 10.5px;
         font-weight: 500;
-        background: #fff;
+        background: var(--surface);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         border-radius: 2px;
-        color: #000;
+        color: var(--txt);
     }
     .ts.picked {
-        background: #6aaa64;
-        border-color: #6aaa64;
-        color: #fff;
+        background: var(--picked-bg);
+        border-color: var(--picked-bg);
+        color: var(--picked-txt);
         font-weight: 700;
     }
     .ts.eliminated {
-        background: #787c7e;
-        border-color: #787c7e;
-        color: #fff;
+        background: var(--elim-bg);
+        border-color: var(--elim-bg);
+        color: var(--elim-txt);
         text-decoration: line-through;
-        opacity: 0.8;
+        opacity: 0.85;
     }
     .ts.unpicked {
-        background: #fff;
-        color: #000;
+        background: var(--surface);
+        color: var(--txt);
     }
     .ts .seed {
         font-size: 9px;
@@ -341,7 +377,7 @@ def _bracket_css():
         opacity: 0.75;
     }
     .ts.picked .seed, .ts.eliminated .seed {
-        color: #fff;
+        color: inherit;
     }
     .ff-section {
         text-align: center;
@@ -353,7 +389,7 @@ def _bracket_css():
         font-weight: 800;
         letter-spacing: 2px;
         text-transform: uppercase;
-        color: #555;
+        color: var(--txt-muted);
         margin-bottom: 12px;
     }
     .ff-game {
@@ -367,14 +403,14 @@ def _bracket_css():
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 1px;
-        color: #888;
+        color: var(--txt-faint);
         text-align: center;
         margin-bottom: 4px;
     }
     .ff-vs {
         font-size: 9px;
         text-align: center;
-        color: #888;
+        color: var(--txt-faint);
         padding: 2px 0;
     }
     .champ-section {
@@ -386,20 +422,20 @@ def _bracket_css():
         font-weight: 800;
         letter-spacing: 3px;
         text-transform: uppercase;
-        color: #555;
+        color: var(--txt-muted);
         margin-bottom: 8px;
     }
     .champ-name {
         font-size: 22px;
         font-weight: 900;
-        color: #6aaa64;
+        color: var(--champ-color);
         letter-spacing: 1px;
         text-transform: uppercase;
     }
     .champ-pending {
         font-size: 18px;
         font-weight: 700;
-        color: #d3d6da;
+        color: var(--txt-faint);
         letter-spacing: 1px;
     }
     .regions-grid {
@@ -410,7 +446,7 @@ def _bracket_css():
     }
     .separator {
         border: none;
-        border-top: 2px solid #d3d6da;
+        border-top: 2px solid var(--sep);
         margin: 16px 0;
     }
     """
@@ -480,10 +516,10 @@ def _build_region_bracket_html(region_key, resolved_regions):
         cb = cy(0, i * 2 + 1)
         vx = col_x[0] + COL_W + CONN_W // 2
         svg_lines += [
-            f'<line x1="{col_x[0]+COL_W}" y1="{ca:.1f}" x2="{vx}" y2="{ca:.1f}" stroke="#d3d6da" stroke-width="1.5"/>',
-            f'<line x1="{col_x[0]+COL_W}" y1="{cb:.1f}" x2="{vx}" y2="{cb:.1f}" stroke="#d3d6da" stroke-width="1.5"/>',
-            f'<line x1="{vx}" y1="{ca:.1f}" x2="{vx}" y2="{cb:.1f}" stroke="#d3d6da" stroke-width="1.5"/>',
-            f'<line x1="{vx}" y1="{center:.1f}" x2="{col_x[1]}" y2="{center:.1f}" stroke="#d3d6da" stroke-width="1.5"/>',
+            f'<line x1="{col_x[0]+COL_W}" y1="{ca:.1f}" x2="{vx}" y2="{ca:.1f}" stroke="var(--line)" stroke-width="1.5"/>',
+            f'<line x1="{col_x[0]+COL_W}" y1="{cb:.1f}" x2="{vx}" y2="{cb:.1f}" stroke="var(--line)" stroke-width="1.5"/>',
+            f'<line x1="{vx}" y1="{ca:.1f}" x2="{vx}" y2="{cb:.1f}" stroke="var(--line)" stroke-width="1.5"/>',
+            f'<line x1="{vx}" y1="{center:.1f}" x2="{col_x[1]}" y2="{center:.1f}" stroke="var(--line)" stroke-width="1.5"/>',
         ]
 
     # ── S16 matchups + slots ──
@@ -502,10 +538,10 @@ def _build_region_bracket_html(region_key, resolved_regions):
         cb = cy(1, i * 2 + 1)
         vx = col_x[1] + COL_W + CONN_W // 2
         svg_lines += [
-            f'<line x1="{col_x[1]+COL_W}" y1="{ca:.1f}" x2="{vx}" y2="{ca:.1f}" stroke="#d3d6da" stroke-width="1.5"/>',
-            f'<line x1="{col_x[1]+COL_W}" y1="{cb:.1f}" x2="{vx}" y2="{cb:.1f}" stroke="#d3d6da" stroke-width="1.5"/>',
-            f'<line x1="{vx}" y1="{ca:.1f}" x2="{vx}" y2="{cb:.1f}" stroke="#d3d6da" stroke-width="1.5"/>',
-            f'<line x1="{vx}" y1="{center:.1f}" x2="{col_x[2]}" y2="{center:.1f}" stroke="#d3d6da" stroke-width="1.5"/>',
+            f'<line x1="{col_x[1]+COL_W}" y1="{ca:.1f}" x2="{vx}" y2="{ca:.1f}" stroke="var(--line)" stroke-width="1.5"/>',
+            f'<line x1="{col_x[1]+COL_W}" y1="{cb:.1f}" x2="{vx}" y2="{cb:.1f}" stroke="var(--line)" stroke-width="1.5"/>',
+            f'<line x1="{vx}" y1="{ca:.1f}" x2="{vx}" y2="{cb:.1f}" stroke="var(--line)" stroke-width="1.5"/>',
+            f'<line x1="{vx}" y1="{center:.1f}" x2="{col_x[2]}" y2="{center:.1f}" stroke="var(--line)" stroke-width="1.5"/>',
         ]
 
     # ── E8 matchup + slot ──
@@ -523,10 +559,10 @@ def _build_region_bracket_html(region_key, resolved_regions):
     cb = cy(2, 1)
     vx = col_x[2] + COL_W + CONN_W // 2
     svg_lines += [
-        f'<line x1="{col_x[2]+COL_W}" y1="{ca:.1f}" x2="{vx}" y2="{ca:.1f}" stroke="#d3d6da" stroke-width="1.5"/>',
-        f'<line x1="{col_x[2]+COL_W}" y1="{cb:.1f}" x2="{vx}" y2="{cb:.1f}" stroke="#d3d6da" stroke-width="1.5"/>',
-        f'<line x1="{vx}" y1="{ca:.1f}" x2="{vx}" y2="{cb:.1f}" stroke="#d3d6da" stroke-width="1.5"/>',
-        f'<line x1="{vx}" y1="{center:.1f}" x2="{col_x[3]}" y2="{center:.1f}" stroke="#d3d6da" stroke-width="1.5"/>',
+        f'<line x1="{col_x[2]+COL_W}" y1="{ca:.1f}" x2="{vx}" y2="{ca:.1f}" stroke="var(--line)" stroke-width="1.5"/>',
+        f'<line x1="{col_x[2]+COL_W}" y1="{cb:.1f}" x2="{vx}" y2="{cb:.1f}" stroke="var(--line)" stroke-width="1.5"/>',
+        f'<line x1="{vx}" y1="{ca:.1f}" x2="{vx}" y2="{cb:.1f}" stroke="var(--line)" stroke-width="1.5"/>',
+        f'<line x1="{vx}" y1="{center:.1f}" x2="{col_x[3]}" y2="{center:.1f}" stroke="var(--line)" stroke-width="1.5"/>',
     ]
 
     round_headers = [
@@ -796,262 +832,448 @@ def generate_pdf(user_name):
     doc.build(story)
     return buffer.getvalue()
 
-# ── SECTION 8: NYT-Style CSS Injection ───────────────────────────────────────
+# ── SECTION 8: CSS Injection (light + dark adaptive) ─────────────────────────
 
 def inject_css():
     st.markdown(
         """
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Sans+3:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap');
 
-        /* ── Force light-mode palette on every Streamlit container ───────────
-           These overrides beat Streamlit's CSS variables in both light AND
-           dark OS/browser modes, so the app always looks intentional.       */
+        /* ══════════════════════════════════════════════════════════════════
+           DESIGN TOKENS — light defaults
+           ══════════════════════════════════════════════════════════════════ */
+        :root {
+            --bg-app:      #FAFAF8;
+            --bg-sidebar:  #F9FAFB;
+            --bg-surface:  #FFFFFF;
+            --bg-chip:     #F3F4F6;
 
-        /* Root colour tokens – overwrite Streamlit's dark-mode variables */
-        :root, [data-theme="dark"], [data-theme="light"] {
-            --background-color:           #ffffff !important;
-            --secondary-background-color: #f7f7f7 !important;
-            --text-color:                 #000000 !important;
-            --font:                       'Inter', 'Helvetica Neue', Arial, sans-serif !important;
+            --txt-primary: #111827;
+            --txt-body:    #374151;
+            --txt-muted:   #6B7280;
+            --txt-faint:   #9CA3AF;
+
+            --bdr-strong:  #111827;
+            --bdr-mid:     #D1D5DB;
+            --bdr-light:   #E5E7EB;
+
+            --accent:      #C84B31;
+            --green:       #6aaa64;
+            --green-dim:   #15803d;
         }
 
-        /* Main app shell */
-        .stApp,
-        .stApp > header,
+        /* ══════════════════════════════════════════════════════════════════
+           DARK MODE — OS / browser preference
+           ══════════════════════════════════════════════════════════════════ */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-app:      #0E1117;
+                --bg-sidebar:  #161C2D;
+                --bg-surface:  #1C2333;
+                --bg-chip:     #252D42;
+
+                --txt-primary: #F0F4FF;
+                --txt-body:    #C8D4EC;
+                --txt-muted:   #8899BB;
+                --txt-faint:   #4D618A;
+
+                --bdr-strong:  #E0E8FF;
+                --bdr-mid:     #2D3D5A;
+                --bdr-light:   #1A2540;
+
+                --accent:      #FF6B4A;
+                --green:       #4ade80;
+                --green-dim:   #166534;
+            }
+        }
+
+        /* ══════════════════════════════════════════════════════════════════
+           DARK MODE — Streamlit's explicit theme toggle
+           ══════════════════════════════════════════════════════════════════ */
+        [data-theme="dark"],
+        [data-theme="dark"] :root {
+            --bg-app:      #0E1117;
+            --bg-sidebar:  #161C2D;
+            --bg-surface:  #1C2333;
+            --bg-chip:     #252D42;
+            --txt-primary: #F0F4FF;
+            --txt-body:    #C8D4EC;
+            --txt-muted:   #8899BB;
+            --txt-faint:   #4D618A;
+            --bdr-strong:  #E0E8FF;
+            --bdr-mid:     #2D3D5A;
+            --bdr-light:   #1A2540;
+            --accent:      #FF6B4A;
+            --green:       #4ade80;
+            --green-dim:   #166534;
+        }
+
+        /* ══════════════════════════════════════════════════════════════════
+           BASE RESETS
+           ══════════════════════════════════════════════════════════════════ */
+        html, body, [class*="css"] {
+            font-family: 'Source Sans 3', 'Helvetica Neue', Arial, sans-serif;
+        }
+        .main .block-container {
+            padding-top: 1.5rem;
+            padding-left: 2rem;
+            padding-right: 2rem;
+            padding-bottom: 3rem;
+            max-width: 1300px;
+        }
+        .stApp {
+            background-color: var(--bg-app) !important;
+        }
         [data-testid="stAppViewContainer"],
         [data-testid="stAppViewBlockContainer"],
-        [data-testid="block-container"],
-        .main .block-container {
-            background-color: #ffffff !important;
-            color: #000000 !important;
-            font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif !important;
+        [data-testid="block-container"] {
+            background-color: var(--bg-app) !important;
+        }
+        hr { border-color: var(--bdr-light) !important; }
+        #MainMenu { visibility: hidden; }
+        footer     { visibility: hidden; }
+
+        /* ══════════════════════════════════════════════════════════════════
+           TYPOGRAPHY
+           ══════════════════════════════════════════════════════════════════ */
+        .stApp h1, .stApp h2, .stApp h3, .stApp h4 {
+            font-family: 'Playfair Display', Georgia, serif !important;
+            color: var(--txt-primary) !important;
+        }
+        .stApp p, .stMarkdown p, .stMarkdown li {
+            color: var(--txt-body) !important;
+            font-family: 'Source Sans 3', 'Helvetica Neue', Arial, sans-serif !important;
         }
 
-        /* Every generic element inside the app */
-        .stApp p,
-        .stApp span,
-        .stApp div,
-        .stApp li,
-        .stApp label,
-        .stApp small,
-        .stApp strong,
-        .stApp em,
-        .element-container,
-        .stMarkdown,
-        .stMarkdown p,
-        .stMarkdown li {
-            color: #000000 !important;
+        /* ══════════════════════════════════════════════════════════════════
+           PAGE HERO / PHASE HEADERS
+           ══════════════════════════════════════════════════════════════════ */
+        .app-hero {
+            border-top: 4px solid var(--bdr-strong);
+            border-bottom: 1px solid var(--bdr-mid);
+            padding: 1.25rem 0 1.1rem;
+            margin-bottom: 1.75rem;
+        }
+        .hero-eyebrow, .phase-eyebrow {
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--txt-muted);
+            margin-bottom: 0.25rem;
+        }
+        .phase-eyebrow { color: var(--accent); }
+        .hero-title {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: clamp(2rem, 4.5vw, 3rem);
+            font-weight: 900;
+            color: var(--txt-primary);
+            line-height: 1.05;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.4rem;
+        }
+        .phase-title {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--txt-primary);
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.3rem;
+            border-bottom: 2px solid var(--bdr-mid);
+            padding-bottom: 0.5rem;
+        }
+        .hero-sub, .phase-sub {
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 1rem;
+            font-weight: 300;
+            color: var(--txt-body);
+            line-height: 1.6;
+            max-width: 640px;
+            margin: 0;
         }
 
-        /* Headings */
-        .stApp h1 {
-            font-weight: 900 !important;
-            font-size: 2rem !important;
-            letter-spacing: -1px !important;
-            color: #000000 !important;
+        /* ══════════════════════════════════════════════════════════════════
+           STAT CHIPS ROW
+           ══════════════════════════════════════════════════════════════════ */
+        .chips-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin: 1rem 0 1.5rem;
         }
-        .stApp h2,
-        .stApp h3,
-        .stApp h4 {
-            font-weight: 800 !important;
-            color: #000000 !important;
-            letter-spacing: -0.5px !important;
+        .stat-chip {
+            flex: 1 1 140px;
+            min-width: 120px;
+            background: var(--bg-surface);
+            border: 1px solid var(--bdr-mid);
+            border-radius: 8px;
+            padding: 0.65rem 1rem;
+        }
+        .chip-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--txt-faint);
+            margin-bottom: 0.15rem;
+        }
+        .chip-value {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 1.6rem;
+            font-weight: 900;
+            color: var(--txt-primary);
+            line-height: 1.1;
+        }
+        .chip-value.accent { color: var(--accent); }
+        .chip-value.green  { color: var(--green);  }
+        .chip-sub {
+            font-size: 0.72rem;
+            color: var(--txt-muted);
+            margin-top: 0.1rem;
         }
 
-        /* Horizontal rule */
-        hr {
-            border-color: #d3d6da !important;
+        /* ══════════════════════════════════════════════════════════════════
+           SECTION HEAD
+           ══════════════════════════════════════════════════════════════════ */
+        .section-head {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--txt-primary);
+            border-bottom: 2px solid var(--bdr-strong);
+            padding-bottom: 0.3rem;
+            margin-bottom: 1rem;
+            margin-top: 0.5rem;
         }
 
-        /* ── Sidebar ──────────────────────────────────────────────────────── */
-        [data-testid="stSidebar"],
-        [data-testid="stSidebar"] > div,
-        [data-testid="stSidebar"] [data-testid="stSidebarContent"] {
-            background-color: #f7f7f7 !important;
-            color: #000000 !important;
-            border-right: 2px solid #d3d6da !important;
+        /* ══════════════════════════════════════════════════════════════════
+           CHAMPION CARD
+           ══════════════════════════════════════════════════════════════════ */
+        .champion-card {
+            border-left: 5px solid var(--green);
+            background: var(--bg-surface);
+            border: 1px solid var(--bdr-mid);
+            border-left: 5px solid var(--green);
+            border-radius: 0 8px 8px 0;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
         }
-        [data-testid="stSidebar"] p,
-        [data-testid="stSidebar"] span,
-        [data-testid="stSidebar"] div,
-        [data-testid="stSidebar"] label,
-        [data-testid="stSidebar"] small {
-            color: #000000 !important;
+        .champion-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--txt-muted);
+            margin-bottom: 0.4rem;
+        }
+        .champion-name {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 2.75rem;
+            font-weight: 900;
+            color: var(--green);
+            line-height: 1.05;
+        }
+        .champion-sub {
+            font-size: 0.9rem;
+            color: var(--txt-muted);
+            margin-top: 0.3rem;
         }
 
-        /* ── Expanders ────────────────────────────────────────────────────── */
+        /* ══════════════════════════════════════════════════════════════════
+           SIDEBAR
+           ══════════════════════════════════════════════════════════════════ */
+        [data-testid="stSidebar"] {
+            background: var(--bg-sidebar) !important;
+            border-right: 1px solid var(--bdr-light) !important;
+        }
+        .sidebar-brand {
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--txt-muted);
+            margin-bottom: 0.25rem;
+        }
+        .sidebar-title {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 1.15rem;
+            font-weight: 900;
+            color: var(--txt-primary);
+            line-height: 1.15;
+            margin-bottom: 1rem;
+        }
+        .sidebar-row {
+            font-size: 0.85rem;
+            color: var(--txt-body);
+            margin-bottom: 0.3rem;
+        }
+        .sidebar-row strong {
+            color: var(--txt-primary);
+            font-weight: 700;
+        }
+        .sidebar-champ {
+            border-left: 4px solid var(--green);
+            padding: 0.6rem 0.9rem;
+            background: var(--bg-chip);
+            border-radius: 0 6px 6px 0;
+            margin: 0.75rem 0;
+        }
+        .sidebar-champ-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--txt-muted);
+        }
+        .sidebar-champ-name {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--green);
+        }
+        .sidebar-footer {
+            font-size: 0.72rem;
+            color: var(--txt-faint);
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--bdr-light);
+            margin-top: 0.75rem;
+        }
+
+        /* ══════════════════════════════════════════════════════════════════
+           EXPANDERS
+           ══════════════════════════════════════════════════════════════════ */
         div[data-testid="stExpander"] {
-            border: 1.5px solid #d3d6da !important;
-            border-radius: 4px !important;
-            background-color: #ffffff !important;
-            margin-bottom: 8px !important;
+            border: 1px solid var(--bdr-mid) !important;
+            border-radius: 6px !important;
+            background: var(--bg-surface) !important;
+            margin-bottom: 10px !important;
         }
-        /* Header row (collapsed/expanded toggle) */
         div[data-testid="stExpander"] summary,
-        div[data-testid="stExpander"] > details > summary,
-        div[data-testid="stExpander"] [data-testid="stExpanderToggleIcon"],
-        div[data-testid="stExpander"] > div:first-child {
-            background-color: #f7f7f7 !important;
-            color: #000000 !important;
+        div[data-testid="stExpander"] > details > summary {
+            background: var(--bg-chip) !important;
+            border-radius: 6px 6px 0 0 !important;
         }
         div[data-testid="stExpander"] summary span,
         div[data-testid="stExpander"] summary p,
         div[data-testid="stExpander"] summary div {
-            color: #000000 !important;
+            color: var(--txt-primary) !important;
+            font-weight: 600 !important;
+            font-family: 'Source Sans 3', sans-serif !important;
         }
-        /* Body of open expander */
         div[data-testid="stExpander"] [data-testid="stExpanderDetails"],
         div[data-testid="stExpander"] details > div {
-            background-color: #ffffff !important;
-            color: #000000 !important;
+            background: var(--bg-surface) !important;
         }
 
-        /* ── Radio buttons ────────────────────────────────────────────────── */
-        div[data-testid="stRadio"] {
-            background-color: transparent !important;
-        }
+        /* ══════════════════════════════════════════════════════════════════
+           RADIO BUTTONS
+           ══════════════════════════════════════════════════════════════════ */
         div[data-testid="stRadio"] label,
         div[data-testid="stRadio"] label span,
-        div[data-testid="stRadio"] label p,
-        div[data-testid="stRadio"] > label {
-            color: #000000 !important;
-            font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif !important;
+        div[data-testid="stRadio"] label p {
+            color: var(--txt-body) !important;
+            font-family: 'Source Sans 3', sans-serif !important;
             font-size: 14px !important;
         }
-        /* The radio circle itself – keep it visible */
         div[data-testid="stRadio"] input[type="radio"] + div {
-            border-color: #000000 !important;
+            border-color: var(--bdr-mid) !important;
         }
         div[data-testid="stRadio"] input[type="radio"]:checked + div {
-            background-color: #000000 !important;
-            border-color:     #000000 !important;
+            background-color: var(--accent) !important;
+            border-color:     var(--accent) !important;
         }
 
-        /* ── Text inputs ──────────────────────────────────────────────────── */
-        .stTextInput > div > div,
+        /* ══════════════════════════════════════════════════════════════════
+           TEXT INPUT
+           ══════════════════════════════════════════════════════════════════ */
         .stTextInput > div > div > input {
-            background-color: #ffffff !important;
-            color: #000000 !important;
-            border: 2px solid #000000 !important;
-            border-radius: 4px !important;
-            font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif !important;
+            background: var(--bg-surface) !important;
+            color: var(--txt-primary) !important;
+            border: 2px solid var(--bdr-mid) !important;
+            border-radius: 6px !important;
+            font-family: 'Source Sans 3', sans-serif !important;
             font-size: 15px !important;
             padding: 8px 12px !important;
         }
         .stTextInput > div > div > input:focus {
-            border-color: #6aaa64 !important;
-            box-shadow: 0 0 0 2px rgba(106, 170, 100, 0.25) !important;
+            border-color: var(--accent) !important;
+            box-shadow: 0 0 0 2px rgba(200,75,49,0.15) !important;
         }
-        .stTextInput label,
-        .stTextInput label span {
-            color: #000000 !important;
+        .stTextInput label, .stTextInput label span {
+            color: var(--txt-muted) !important;
         }
 
-        /* ── Buttons ──────────────────────────────────────────────────────── */
+        /* ══════════════════════════════════════════════════════════════════
+           BUTTONS
+           ══════════════════════════════════════════════════════════════════ */
         .stButton > button {
-            background-color: #000000 !important;
-            color: #ffffff !important;
+            background-color: var(--txt-primary) !important;
+            color: var(--bg-app) !important;
             border: none !important;
             border-radius: 4px !important;
-            font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif !important;
+            font-family: 'Source Sans 3', sans-serif !important;
             font-weight: 700 !important;
-            letter-spacing: 1px !important;
+            letter-spacing: 0.08em !important;
             text-transform: uppercase !important;
-            font-size: 13px !important;
-            padding: 8px 20px !important;
+            font-size: 12px !important;
+            padding: 8px 22px !important;
+            transition: opacity 0.15s !important;
         }
-        .stButton > button:hover {
-            background-color: #222222 !important;
-        }
-        /* Secondary / Reset button */
+        .stButton > button:hover { opacity: 0.82 !important; }
         .stButton > button[kind="secondary"],
         .stButton > button[data-testid="baseButton-secondary"] {
-            background-color: #ffffff !important;
-            color: #000000 !important;
-            border: 2px solid #000000 !important;
+            background-color: transparent !important;
+            color: var(--txt-primary) !important;
+            border: 1.5px solid var(--bdr-mid) !important;
         }
-        .stButton > button[kind="secondary"]:hover,
-        .stButton > button[data-testid="baseButton-secondary"]:hover {
-            background-color: #f0f0f0 !important;
+        .stButton > button[kind="secondary"]:hover {
+            background-color: var(--bg-chip) !important;
         }
-
-        /* ── Download button ──────────────────────────────────────────────── */
         .stDownloadButton > button {
-            background-color: #000000 !important;
-            color: #ffffff !important;
+            background-color: var(--txt-primary) !important;
+            color: var(--bg-app) !important;
             border: none !important;
             border-radius: 4px !important;
             font-weight: 700 !important;
-            letter-spacing: 1px !important;
+            letter-spacing: 0.08em !important;
             text-transform: uppercase !important;
-            font-size: 13px !important;
+            font-size: 12px !important;
         }
 
-        /* ── Progress bar ─────────────────────────────────────────────────── */
+        /* ══════════════════════════════════════════════════════════════════
+           PROGRESS BAR
+           ══════════════════════════════════════════════════════════════════ */
         [data-testid="stProgressBar"] > div,
         .stProgress > div > div > div > div {
-            background-color: #6aaa64 !important;
+            background-color: var(--green) !important;
         }
         [data-testid="stProgressBar"],
         .stProgress > div > div {
-            background-color: #e0e0e0 !important;
+            background-color: var(--bdr-mid) !important;
         }
 
-        /* ── Alert / info / success / warning boxes ───────────────────────── */
-        div[data-testid="stAlert"],
-        .stAlert {
-            border-radius: 4px !important;
-            background-color: #f7f7f7 !important;
-            color: #000000 !important;
+        /* ══════════════════════════════════════════════════════════════════
+           ALERTS
+           ══════════════════════════════════════════════════════════════════ */
+        div[data-testid="stAlert"] {
+            border-radius: 6px !important;
+            background: var(--bg-chip) !important;
         }
         div[data-testid="stAlert"] p,
         div[data-testid="stAlert"] span {
-            color: #000000 !important;
-        }
-        /* Keep Streamlit's coloured left-border for success/info/warning */
-        div[data-testid="stAlert"][data-baseweb="notification"] {
-            background-color: #f7f7f7 !important;
+            color: var(--txt-body) !important;
         }
 
-        /* ── Spinner / status widget ──────────────────────────────────────── */
-        [data-testid="stStatusWidget"] span,
-        [data-testid="stSpinner"] span {
-            color: #000000 !important;
-        }
-
-        /* ── Info callout text (st.info) ──────────────────────────────────── */
-        .stInfo, .stInfo p, .stInfo span { color: #000000 !important; }
-        .stSuccess, .stSuccess p, .stSuccess span { color: #000000 !important; }
-        .stWarning, .stWarning p, .stWarning span { color: #000000 !important; }
-
-        /* ── Custom component helpers ─────────────────────────────────────── */
-        .nyt-badge {
-            display: inline-block;
-            background: #000000;
-            color: #ffffff !important;
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            padding: 3px 8px;
-            border-radius: 2px;
-            margin-bottom: 8px;
-        }
-        .round-header {
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: #555555 !important;
-            padding: 8px 0 4px;
-            border-bottom: 2px solid #000000;
-            margin-bottom: 12px;
-        }
+        /* ══════════════════════════════════════════════════════════════════
+           GAME DIVIDER
+           ══════════════════════════════════════════════════════════════════ */
         .game-divider {
             border: none !important;
-            border-top: 1px solid #e0e0e0 !important;
-            margin: 6px 0 !important;
+            border-top: 1px solid var(--bdr-light) !important;
+            margin: 8px 0 !important;
         }
         </style>
         """,
@@ -1061,11 +1283,20 @@ def inject_css():
 # ── SECTION 9: Phase Renderers ────────────────────────────────────────────────
 
 def render_phase_0():
-    st.markdown('<div class="nyt-badge">McCall Family Bracket Challenge</div>', unsafe_allow_html=True)
-    st.title("2026 March Madness Bracket")
-    st.markdown("---")
-    st.markdown("### Enter Your Name to Begin")
-    st.markdown("Your name will appear on your bracket and exported PDF.")
+    st.markdown(
+        """
+        <div class="app-hero">
+          <div class="hero-eyebrow">2026 NCAA Tournament &nbsp;·&nbsp; Family Bracket Challenge</div>
+          <div class="hero-title">March Madness 2026</div>
+          <div class="hero-sub">
+            Fill out all 63 games round by round, follow your picks on a live
+            visual bracket, and export a shareable PDF when you're done.
+          </div>
+        </div>
+        <div class="section-head">Enter Your Name to Begin</div>
+        """,
+        unsafe_allow_html=True,
+    )
     col1, col2 = st.columns([2, 1])
     with col1:
         name = st.text_input(
@@ -1085,10 +1316,14 @@ def render_phase_0():
 
 
 def render_phase_1():
-    st.markdown('<div class="nyt-badge">Play-In Games</div>', unsafe_allow_html=True)
-    st.title("First Four")
-    st.markdown("Pick the winner of each play-in game. These teams advance to the Round of 64.")
-    st.markdown("---")
+    st.markdown(
+        """
+        <div class="phase-eyebrow">Play-In Games</div>
+        <div class="phase-title">First Four</div>
+        <div class="phase-sub">Pick the winner of each play-in game. Winners advance to the Round of 64.</div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     for ff in FIRST_FOUR:
         with st.expander(f"**{ff['label']}**", expanded=True):
@@ -1159,8 +1394,11 @@ def _render_round_picks(region_key, region_name, matchups, picks_key, show_seeds
 
 
 def render_phase_2():
-    st.markdown('<div class="nyt-badge">Round 1</div>', unsafe_allow_html=True)
-    st.title("Round of 64")
+    st.markdown(
+        '<div class="phase-eyebrow">Round 1 of 6</div>'
+        '<div class="phase-title">Round of 64</div>',
+        unsafe_allow_html=True,
+    )
     resolved = resolve_tbd_teams()
 
     col_left, col_right = st.columns(2)
@@ -1189,8 +1427,11 @@ def render_phase_2():
 
 
 def render_phase_3():
-    st.markdown('<div class="nyt-badge">Round 2</div>', unsafe_allow_html=True)
-    st.title("Round of 32")
+    st.markdown(
+        '<div class="phase-eyebrow">Round 2 of 6</div>'
+        '<div class="phase-title">Round of 32</div>',
+        unsafe_allow_html=True,
+    )
 
     col_left, col_right = st.columns(2)
     with col_left:
@@ -1218,8 +1459,11 @@ def render_phase_3():
 
 
 def render_phase_4():
-    st.markdown('<div class="nyt-badge">Sweet 16</div>', unsafe_allow_html=True)
-    st.title("Sweet 16")
+    st.markdown(
+        '<div class="phase-eyebrow">Round 3 of 6</div>'
+        '<div class="phase-title">Sweet 16</div>',
+        unsafe_allow_html=True,
+    )
 
     col_left, col_right = st.columns(2)
     with col_left:
@@ -1247,9 +1491,12 @@ def render_phase_4():
 
 
 def render_phase_5():
-    st.markdown('<div class="nyt-badge">Elite Eight</div>', unsafe_allow_html=True)
-    st.title("Elite Eight")
-    st.markdown("The final four games before the Final Four — one per region.")
+    st.markdown(
+        '<div class="phase-eyebrow">Round 4 of 6</div>'
+        '<div class="phase-title">Elite Eight</div>'
+        '<div class="phase-sub">One game per region — the last stop before the Final Four.</div>',
+        unsafe_allow_html=True,
+    )
 
     col_left, col_right = st.columns(2)
     with col_left:
@@ -1277,10 +1524,13 @@ def render_phase_5():
 
 
 def render_phase_6():
-    st.markdown('<div class="nyt-badge">Final Four</div>', unsafe_allow_html=True)
-    st.title("Final Four")
-    st.markdown("Pick the two finalists who will compete for the national championship.")
-    st.markdown("---")
+    st.markdown(
+        '<div class="phase-eyebrow">Round 5 of 6</div>'
+        '<div class="phase-title">Final Four</div>'
+        '<div class="phase-sub">Pick the two finalists competing for the national championship.</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown("")
 
     ff_matchups = get_ff_matchups()
     col_left, col_right = st.columns(2)
@@ -1324,10 +1574,13 @@ def render_phase_6():
 
 
 def render_phase_7():
-    st.markdown('<div class="nyt-badge">Championship</div>', unsafe_allow_html=True)
-    st.title("National Championship")
-    st.markdown("Pick your 2026 NCAA Men's Basketball National Champion.")
-    st.markdown("---")
+    st.markdown(
+        '<div class="phase-eyebrow">Round 6 of 6</div>'
+        '<div class="phase-title">National Championship</div>'
+        '<div class="phase-sub">Pick your 2026 NCAA Men\'s Basketball National Champion.</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown("")
 
     m = get_championship_matchup()
     team_a = m["team_a"]
@@ -1365,35 +1618,31 @@ def render_phase_7():
 
 def render_phase_8():
     champion = st.session_state.get("picks_championship", "Unknown")
+    user = st.session_state.get("user_name", "")
     st.balloons()
 
-    st.markdown('<div class="nyt-badge">Bracket Complete</div>', unsafe_allow_html=True)
-    st.title(f"Your 2026 Champion: {champion}")
+    st.markdown(
+        '<div class="phase-eyebrow">Bracket Complete</div>'
+        '<div class="phase-title">Your 2026 Bracket</div>',
+        unsafe_allow_html=True,
+    )
 
+    # Champion card — uses CSS variables, fully dark-mode aware
     st.markdown(
         f"""
-        <div style="background:#000;color:#6aaa64;padding:24px;border-radius:6px;
-        text-align:center;margin-bottom:24px;">
-          <div style="font-size:13px;font-weight:800;letter-spacing:3px;
-          text-transform:uppercase;color:#fff;margin-bottom:8px;">
-            2026 NCAA National Champion
-          </div>
-          <div style="font-size:32px;font-weight:900;letter-spacing:1px;">
-            {champion.upper()}
-          </div>
-          <div style="font-size:12px;color:#6aaa64;margin-top:8px;">
-            Bracket by {st.session_state.get('user_name', '')}
-          </div>
+        <div class="champion-card">
+          <div class="champion-label">2026 NCAA National Champion</div>
+          <div class="champion-name">{champion}</div>
+          <div class="champion-sub">Bracket by {user}</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    st.markdown("### Full Bracket Summary")
+    st.markdown('<div class="section-head">Full Bracket</div>', unsafe_allow_html=True)
     components.html(build_bracket_html(), height=1300, scrolling=True)
 
-    st.markdown("---")
-    st.markdown("### Export Your Bracket")
+    st.markdown('<div class="section-head" style="margin-top:1.5rem;">Export Your Bracket</div>', unsafe_allow_html=True)
     col1, col2 = st.columns([2, 1])
     with col1:
         if st.button("Generate PDF", type="primary"):
@@ -1417,37 +1666,44 @@ def render_sidebar():
     with st.sidebar:
         st.markdown(
             """
-            <div style="font-size:11px;font-weight:800;letter-spacing:2px;
-            text-transform:uppercase;color:#555;margin-bottom:4px;">
-            McCall Family Bracket Challenge
-            </div>
-            <div style="font-size:20px;font-weight:900;color:#000;line-height:1.1;
-            margin-bottom:16px;">
-            2026 March Madness
-            </div>
+            <div class="sidebar-brand">McCall Family · 2026 Tournament</div>
+            <div class="sidebar-title">March Madness<br>Bracket</div>
             """,
             unsafe_allow_html=True,
         )
 
-        user = st.session_state.get("user_name") or "Not set"
-        st.markdown(f"**Picker:** {user}")
+        user = st.session_state.get("user_name") or "—"
+        st.markdown(
+            f'<div class="sidebar-row"><strong>Picker</strong><br>{user}</div>',
+            unsafe_allow_html=True,
+        )
         st.markdown("---")
 
         total_picks = count_total_picks()
         pct = total_picks / 63
-        st.markdown(f"**Progress:** {total_picks} / 63 games")
+
+        # Progress chip
+        st.markdown(
+            f"""
+            <div class="stat-chip">
+              <div class="chip-label">Bracket Progress</div>
+              <div class="chip-value">{total_picks}<span style="font-size:1rem;font-weight:400"> / 63</span></div>
+              <div class="chip-sub">games picked</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
         st.progress(pct)
 
         champion = st.session_state.get("picks_championship")
         if champion:
-            st.markdown("---")
             st.markdown(
-                f'<div style="background:#6aaa64;color:#fff;padding:8px;'
-                f'border-radius:4px;text-align:center;">'
-                f'<div style="font-size:10px;font-weight:700;letter-spacing:1px;'
-                f'text-transform:uppercase;">Champion Pick</div>'
-                f'<div style="font-size:15px;font-weight:900;">{champion}</div>'
-                f'</div>',
+                f"""
+                <div class="sidebar-champ">
+                  <div class="sidebar-champ-label">Champion Pick</div>
+                  <div class="sidebar-champ-name">{champion}</div>
+                </div>
+                """,
                 unsafe_allow_html=True,
             )
 
@@ -1455,25 +1711,21 @@ def render_sidebar():
 
         phase = st.session_state.get("current_phase", 0)
         phase_names = {
-            0: "Name Entry",
-            1: "First Four",
-            2: "Round of 64",
-            3: "Round of 32",
-            4: "Sweet 16",
-            5: "Elite Eight",
-            6: "Final Four",
-            7: "Championship",
-            8: "Complete",
+            0: "Name Entry", 1: "First Four", 2: "Round of 64",
+            3: "Round of 32", 4: "Sweet 16",  5: "Elite Eight",
+            6: "Final Four", 7: "Championship", 8: "Complete",
         }
-        st.markdown(f"**Current Round:** {phase_names.get(phase, '—')}")
-        st.markdown("---")
+        st.markdown(
+            f'<div class="sidebar-row"><strong>Current Round</strong><br>{phase_names.get(phase, "—")}</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown("")
 
         if st.button("Reset Bracket", type="secondary"):
             reset_session_state()
 
-        st.markdown("---")
         st.markdown(
-            '<div style="font-size:10px;color:#888;">2026 Selection Sunday: March 15, 2026</div>',
+            '<div class="sidebar-footer">2026 Selection Sunday · March 15, 2026</div>',
             unsafe_allow_html=True,
         )
 
